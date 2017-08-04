@@ -37,11 +37,11 @@ ASN1 string validation references:
                      (safety 0)))
   (every #'asn1-iastring-char-p bytes))
 
-(defmethod decode-asn1-string (asn1-string (type (eql +v-asn1-iastring+)))
+(defmethod decode-asn1-string (asn1-string (type (eql +V-ASN1-IASTRING+)))
   (let ((bytes (asn1-string-bytes-vector asn1-string)))
     (if (asn1-iastring-p bytes)
         (flex:octets-to-string bytes :external-format :ascii)
-        (error 'invalid-asn1-string :type '+v-asn1-iastring+))))
+        (error 'invalid-asn1-string :type '+V-ASN1-IASTRING+))))
 
 (defun asn1-printable-char-p (byte)
   (declare (type (unsigned-byte 8) byte)
@@ -78,26 +78,26 @@ ASN1 string validation references:
                      (safety 0)))
   (every #'asn1-printable-char-p bytes))
 
-(defmethod decode-asn1-string (asn1-string (type (eql +v-asn1-printablestring+)))
+(defmethod decode-asn1-string (asn1-string (type (eql +V-ASN1-PRINTABLESTRING+)))
   (let* ((bytes (asn1-string-bytes-vector asn1-string)))
     (if (asn1-printable-string-p bytes)
         (flex:octets-to-string bytes :external-format :ascii)
-        (error 'invalid-asn1-string :type '+v-asn1-printablestring+))))
+        (error 'invalid-asn1-string :type '+V-ASN1-PRINTABLESTRING+))))
 
-(defmethod decode-asn1-string (asn1-string (type (eql +v-asn1-utf8string+)))
+(defmethod decode-asn1-string (asn1-string (type (eql +V-ASN1-UTF8STRING+)))
   (let* ((data (asn1-string-data asn1-string))
          (length (asn1-string-length asn1-string)))
     (cffi:foreign-string-to-lisp data :count length :encoding :utf-8)))
 
-(defmethod decode-asn1-string (asn1-string (type (eql +v-asn1-universalstring+)))
+(defmethod decode-asn1-string (asn1-string (type (eql +V-ASN1-UNIVERSALSTRING+)))
   (if (= 0 (mod (asn1-string-length asn1-string) 4))
       ;; cffi sometimes fails here on sbcl? idk why (maybe threading?)
       ;; fail: Illegal :UTF-32 character starting at position 48...
       ;; when (length bytes) is 48...
       ;; so I'm passing :count explicitly
       (or (ignore-errors (cffi:foreign-string-to-lisp (asn1-string-data asn1-string) :count (asn1-string-length asn1-string) :encoding :utf-32))
-          (error 'invalid-asn1-string :type '+v-asn1-universalstring+))
-      (error 'invalid-asn1-string :type '+v-asn1-universalstring+)))
+          (error 'invalid-asn1-string :type '+V-ASN1-UNIVERSALSTRING+))
+      (error 'invalid-asn1-string :type '+V-ASN1-UNIVERSALSTRING+)))
 
 (defun asn1-teletex-char-p (byte)
   (declare (type (unsigned-byte 8) byte)
@@ -114,17 +114,17 @@ ASN1 string validation references:
                      (safety 0)))
   (every #'asn1-teletex-char-p bytes))
 
-(defmethod decode-asn1-string (asn1-string (type (eql +v-asn1-teletexstring+)))
+(defmethod decode-asn1-string (asn1-string (type (eql +V-ASN1-TELETEXSTRING+)))
   (let ((bytes (asn1-string-bytes-vector asn1-string)))
     (if (asn1-teletex-string-p bytes)
         (flex:octets-to-string bytes :external-format :ascii)
-        (error 'invalid-asn1-string :type '+v-asn1-teletexstring+))))
+        (error 'invalid-asn1-string :type '+V-ASN1-TELETEXSTRING+))))
 
-(defmethod decode-asn1-string (asn1-string (type (eql +v-asn1-bmpstring+)))
+(defmethod decode-asn1-string (asn1-string (type (eql +V-ASN1-BMPSTRING+)))
   (if (= 0 (mod (asn1-string-length asn1-string) 2))
       (or (ignore-errors (cffi:foreign-string-to-lisp (asn1-string-data asn1-string) :count (asn1-string-length asn1-string) :encoding :utf-16/be))
-          (error 'invalid-asn1-string :type '+v-asn1-bmpstring+))
-      (error 'invalid-asn1-string :type '+v-asn1-bmpstring+)))
+          (error 'invalid-asn1-string :type '+V-ASN1-BMPSTRING+))
+      (error 'invalid-asn1-string :type '+V-ASN1-BMPSTRING+)))
 
 ;; TODO: respect asn1-string type
 (defun try-get-asn1-string-data (asn1-string allowed-types)
@@ -187,7 +187,7 @@ ASN1 string validation references:
            (flet ((alt-name-to-string (alt-name)
                     (cffi:with-foreign-slots ((type data) alt-name (:struct general-name))
                       (when (= type +GEN-DNS+)
-                        (alexandria:if-let ((string (try-get-asn1-string-data data '(#.+v-asn1-iastring+))))
+                        (alexandria:if-let ((string (try-get-asn1-string-data data '(#.+V-ASN1-IASTRING+))))
                           string
                           (error "Malformed certificate: possibly NULL in dns-alt-name"))))))
              (let ((altnames-count (sk-general-name-num altnames)))
@@ -210,11 +210,11 @@ ASN1 string validation references:
                  (let ((entry-data (x509-name-entry-get-data entry)))
                    (when (cffi:null-pointer-p entry-data)
                      (error "X509_NAME_ENTRY_get_data returned NULL"))
-                   (try-get-asn1-string-data entry-data '(#.+v-asn1-utf8string+
-                                                          #.+v-asn1-bmpstring+
-                                                          #.+v-asn1-printablestring+
-                                                          #.+v-asn1-universalstring+
-                                                          #.+v-asn1-teletexstring+)))))))
+                   (try-get-asn1-string-data entry-data '(#.+V-ASN1-UTF8STRING+
+                                                          #.+V-ASN1-BMPSTRING+
+                                                          #.+V-ASN1-PRINTABLESTRING+
+                                                          #.+V-ASN1-UNIVERSALSTRING+
+                                                          #.+V-ASN1-TELETEXSTRING+)))))))
       (loop
         as cn = (extract-cn)
         if cn collect cn
