@@ -98,7 +98,7 @@
     </p>
 -->
 
-    <h3>API functions</h3>
+    <h3>API</h3>
     <p>
       <div class="def">Function CL+SSL:ENSURE-INITIALIZED (&amp;key (method 'ssl-v23-method) (rand-seed nil))</div>
       In most cases you <strong>do not</strong> need to call this function, because it is called
@@ -221,8 +221,8 @@
       If <tt>auto-free-p</tt> is true the context is freed using <tt>ssl-ctx-free</tt> before exit.
     </p>
     <p>
-      <div class="def">Function CL+SSL:MAKE-SSL-CLIENT-STREAM (fd-or-stream &amp;key external-format certificate key password close-callback (unwrap-streams-p t) hostname)<br/><br/>
-      Function CL+SSL:MAKE-SSL-SERVER-STREAM (fd-or-stream &amp;key external-format certificate key password close-callback (unwrap-streams-p t))</div>
+      <div class="def">Function CL+SSL:MAKE-SSL-CLIENT-STREAM (fd-or-stream &amp;key external-format certificate key password close-callback (unwrap-stream-p t) hostname)<br/><br/>
+      Function CL+SSL:MAKE-SSL-SERVER-STREAM (fd-or-stream &amp;key external-format certificate key password close-callback (unwrap-stream-p t))</div>
       Return an SSL stream for the client (server)
       socket <tt>fd-or-stream</tt>.  All reads and writes to this
       stream will be pushed through the OpenSSL library.
@@ -300,6 +300,30 @@
       Reload <tt>libssl</tt>.  Call this function after restarting a Lisp
       core with CL+SSL dumped into it on Lisp implementations that do
       not reload shared libraries automatically.
+    </p>
+    <p>
+      <div class="def"><a name="libs-already-loaded">
+        *FEATURES* flag :CL+SSL-FOREIGN-LIBS-ALREADY-LOADED
+      </a></div>
+      Allows user to load libssl (and libeay32 on Windows) himself
+      thus choosing the foreigh library(-ies) path and version to load.
+
+      <p>If specified, neither loading of the cl+ssl ASDF system
+        nor (cl+ssl:reload) try to load the foreign libraries,
+        assuming user has loaded them already.</p>
+
+      <pre>
+        (cffi:load-foreign-library "libssl.so.1.0.0")
+
+        (let ((*features* (cons :cl+ssl-foreign-libs-already-loaded
+                                *features*)))
+
+          (ql:quickload :a-system-which-depends-on-cl+ssl)
+
+          ;; or just load cl+ssl
+          (ql:quickload :cl+ssl))
+      </pre>
+
     </p>
     <p>
       <div class="def">Function CL+SSL:STREAM-FD (stream)</div>
