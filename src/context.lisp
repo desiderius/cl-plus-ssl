@@ -33,14 +33,21 @@
   (cond
     ((eq :default location)
      (unless (= 1 (ssl-ctx-set-default-verify-paths ctx))
-       (error 'ssl-error-call :queue (read-ssl-error-queue) :message (format nil "Unable to load default verify paths"))))
-    ;; TODO: design how to load ffi-1.1.0.lisp when and only when corresponding OpenSSL version is available
-    ;; ((eq :default-file location)
-    ;;  (unless (= 1 (openssl-1.1.0:ssl-ctx-set-default-verify-file ctx))
-    ;;    (error 'ssl-error-call :queue (read-ssl-error-queue) :message (format nil "Unable to load default verify file"))))
-    ;; ((eq :default-dir location)
-    ;;  (unless (= 1 (openssl-1.1.0:ssl-ctx-set-default-verify-dir ctx))
-    ;;    (error 'ssl-error-call :queue (read-ssl-error-queue) :message (format nil "Unable to load default verify dir"))))
+       (error 'ssl-error-call
+              :queue (read-ssl-error-queue)
+              :message (format nil "Unable to load default verify paths"))))
+     ((eq :default-file location)
+      ;; supported since openssl 1.1.0
+      (unless (= 1 (ssl-ctx-set-default-verify-file ctx))
+        (error 'ssl-error-call
+               :queue (read-ssl-error-queue)
+               :message (format nil "Unable to load default verify file"))))
+     ((eq :default-dir location)
+      ;; supported since openssl 1.1.0
+      (unless (= 1 (ssl-ctx-set-default-verify-dir ctx))
+        (error 'ssl-error-call
+               :queue (read-ssl-error-queue)
+               :message (format nil "Unable to load default verify dir"))))
     ((stringp location)
      (add-verify-locations ctx (list location)))
     ((pathnamep location)
@@ -96,7 +103,7 @@
                                 (unless disabled-protocols
                                   (setf disabled-protocols
                                         (list +SSL-OP-NO-SSLv2+ +SSL-OP-NO-SSLv3+)))
-                                (ssl-v23-method))))))
+                                (funcall (default-ssl-method)))))))
     (when (cffi:null-pointer-p ctx)
       (error 'ssl-error-initialize :reason "Can't create new SSL CTX" :queue (read-ssl-error-queue)))
     (handler-bind ((error (lambda (_)

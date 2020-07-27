@@ -46,16 +46,32 @@
       information</a>).
     </p>
 
-    <p>
-      <i>Note</i> that you need the <tt>libssl-dev</tt> package on Debian to
-      load this package without manual configuration.
-    </p>
+    <h3>OpenSSL Installation Hints</h3>
+
+    <h4>Debian</h4>
 
     <p>
-      OpenSSL binaries for Windows may be found at
+      You need the <tt>libssl-dev</tt> package on Debian to
+      load this cl+ssl without manual configuration.
+    </p>
+
+    <h4>Windows</h4>
+
+    <p>
+      <a href="https://wiki.openssl.org/index.php/Binaries">https://wiki.openssl.org/index.php/Binaries</a>
+      lists several soruces of binary distributions.
+
+      For example,
       <a href="http://www.slproweb.com/products/Win32OpenSSL.html">http://www.slproweb.com/products/Win32OpenSSL.html</a>
       (slproweb.com is a 3rd party; if you have questions about the OpenSSL installer they provide, 
       please ask in the mailing list specified on the linked page).
+    </p>
+
+    <p>
+      If you chose to install the DLLs into the OpenSSL installation's
+      "bin" directory (recommended), then be sure to add the bin directory to your
+      PATH environment variable and restart your
+      session. e.g. "C:\Program Files\OpenSSL-Win64\bin"
     </p>
 
 
@@ -100,7 +116,7 @@
 
     <h3>API</h3>
     <p>
-      <div class="def">Function CL+SSL:ENSURE-INITIALIZED (&amp;key (method 'ssl-v23-method) (rand-seed nil))</div>
+      <div class="def">Function CL+SSL:ENSURE-INITIALIZED (&amp;key method (rand-seed nil))</div>
       In most cases you <strong>do not</strong> need to call this function, because it is called
       automatically. The only reason to call it explicitly is to supply the <tt>rand-seed</tt> parameter.
       In this case do it before calling any other functions.
@@ -124,8 +140,8 @@
       usually returns predictable values.
     </p>
     <p>
-      <pre class="def" style="font-family:normal;">Function CL+SSL:MAKE-CONTEXT (&amp;key (method (ssl-v23-method))
-                                                                               (disabled-protocols)
+      <pre class="def" style="font-family:normal;">Function CL+SSL:MAKE-CONTEXT (&amp;key method
+                                                                               disabled-protocols
                                                                                (options (list +SSL-OP-ALL+))
                                                                                (session-cache-mode +ssl-sess-cache-server+)
                                                                                (verify-location :default)
@@ -150,7 +166,7 @@
       Keyword arguments:
     </p>
     <p>
-      <tt>method</tt>. Specifies which supported SSL/TLS to use. Defaults to ssl-v23-method
+      <tt>method</tt>. Specifies which supported SSL/TLS to use. If not specified then TLS_method is used on OpenSSL versions supporing it (on legacy versions SSLv23_method is used).
     </p>
     <p>
       <tt>disabled-protocols</tt>. List of +SSL-OP-NO-* constants. Denotes disabled SSL/TLS versions.
@@ -168,8 +184,8 @@
       <br>
       <ul>
         <li><tt>:default</tt> OpenSSL default directory and file will be loaded</li>
-        <li><tt>:default-file</tt> OpenSSL default file will be loaded</li>
-        <li><tt>:default-dir</tt> OpenSSL default directory will be loaded</li>
+        <li><tt>:default-file</tt> OpenSSL default file will be loaded. Requires OpenSSL &gt;= 1.1.0.</li>
+        <li><tt>:default-dir</tt> OpenSSL default directory will be loaded. Requires OpenSSL &gt;= 1.1.0.</li>
         <li><tt>STRING</tt> Directory or file path to be loaded</li>
         <li><tt>PATHNAME</tt> Directory or file path to be loaded</li>
         <li><tt>(LIST (or STRING PATHNAME))</tt> List of directories or files to be loaded</li>
@@ -221,7 +237,7 @@
       If <tt>auto-free-p</tt> is true the context is freed using <tt>ssl-ctx-free</tt> before exit.
     </p>
     <p>
-      <div class="def">Function CL+SSL:MAKE-SSL-CLIENT-STREAM (fd-or-stream &amp;key external-format certificate key password close-callback (unwrap-stream-p t) hostname)<br/><br/>
+      <div class="def">Function CL+SSL:MAKE-SSL-CLIENT-STREAM (fd-or-stream &amp;key external-format certificate key password close-callback (unwrap-stream-p t) verify hostname)<br/><br/>
       Function CL+SSL:MAKE-SSL-SERVER-STREAM (fd-or-stream &amp;key external-format certificate key password close-callback (unwrap-stream-p t))</div>
       Return an SSL stream for the client (server)
       socket <tt>fd-or-stream</tt>.  All reads and writes to this

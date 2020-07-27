@@ -17,6 +17,7 @@
   :license "MIT"
   :author "Eric Marsden, Jochen Schmidt, David Lichteblau"
   :depends-on (:cffi :trivial-gray-streams :flexi-streams #+sbcl :sb-posix
+               #+(and sbcl win32) :sb-bsd-sockets
                :bordeaux-threads :trivial-garbage :uiop
                :alexandria :trivial-features)
   :serial t
@@ -36,13 +37,3 @@
                  (:file "random")
                  (:file "context")
                  (:file "verify-hostname")))))
-
-(defsystem :openssl-1.1.0
-  :description "FFI bindings to API introduced in OpenSSL 1.1.0"
-  :license "MIT"
-  :author "Anton Vodonosov"
-  :depends-on (:cffi)
-  :serial t
-  :components ((:module "src"
-                :serial t
-                :components ((:file "ffi-1.1.0")))))

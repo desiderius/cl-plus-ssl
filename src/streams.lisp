@@ -240,17 +240,17 @@
   socket)
 
 (defun install-key-and-cert (handle key certificate)
-  (when key
-    (unless (eql 1 (ssl-use-rsa-privatekey-file handle
-            key
-            +ssl-filetype-pem+))
-      (error 'ssl-error-initialize :reason (format nil "Can't load RSA private key file ~A" key))))
   (when certificate
     (unless (eql 1 (ssl-use-certificate-file handle
                certificate
                +ssl-filetype-pem+))
       (error 'ssl-error-initialize
-       :reason (format nil "Can't load certificate ~A" certificate)))))
+       :reason (format nil "Can't load certificate ~A" certificate))))
+  (when key
+    (unless (eql 1 (ssl-use-privatekey-file handle
+            key
+            +ssl-filetype-pem+))
+      (error 'ssl-error-initialize :reason (format nil "Can't load private key file ~A" key)))))
 
 (defun x509-certificate-names (x509-certificate)
   (unless (cffi:null-pointer-p x509-certificate)
@@ -382,7 +382,7 @@ Change this variable if you want the previous behaviour.")
 
 ;; fixme: free the context when errors happen in this function
 (defun make-ssl-client-stream
-    (socket &key certificate key password (method 'ssl-v23-method) external-format
+    (socket &key certificate key password method external-format
               close-callback (unwrap-stream-p t)
               (cipher-list *default-cipher-list*)
               (verify (if (ssl-check-verify-p)
@@ -424,7 +424,7 @@ hostname verification if verification is enabled by VERIFY."
 
 ;; fixme: free the context when errors happen in this function
 (defun make-ssl-server-stream
-    (socket &key certificate key password (method 'ssl-v23-method) external-format
+    (socket &key certificate key password method external-format
                  close-callback (unwrap-stream-p t)
                  (cipher-list *default-cipher-list*))
   "Returns an SSL stream for the server socket descriptor SOCKET.
@@ -478,3 +478,41 @@ may be associated with the passphrase PASSWORD."
 #+ecl
 (defmethod stream-fd ((stream two-way-stream))
   (si:file-stream-fd (two-way-stream-input-stream stream)))
+
+#+allegro
+(defmethod stream-fd ((stream stream))
+  (socket:socket-os-fd stream))
+
+#+lispworks
+(defmethod stream-fd ((stream comm::socket-stream))
+  (comm:socket-stream-socket stream))
+
+#+abcl
+(progn
+  (require :abcl-contrib)
+  (require :jss)
+
+  ;;; N.b. Getting the file descriptor from a socket is not supported
+  ;;; by any published JVM API, so every JVM implementation may behave
+  ;;; somewhat differently.  By using the ability of
+  ;;; jss:get-java-fields to access private fields, it is usually
+  ;;; possible to "find" an access path to read the underlying integer
+  ;;; value of the file decriptor, which is all we need to pass to
+  ;;; SSL.
+  (defmethod stream-fd ((stream system::socket-stream))
+    (flet ((get-java-fields (object fields) ;; Thanks to Cyrus Harmon
+             (reduce (lambda (x y)
+                       (jss:get-java-field x y t))
+                     fields
+                     :initial-value object))
+           (jvm-version ()
+             (read
+              (make-string-input-stream
+               (java:jstatic "getProperty" "java.lang.System"
+                                          "java.specification.version")))))
+      (ignore-errors
+       (get-java-fields (java:jcall "getWrappedInputStream"  ;; TODO: define this as a constant
+                                    (two-way-stream-input-stream stream))
+                        (if (< (jvm-version) 14)
+                            '("in" "ch" "fdVal")
+                            '("in" "this$0" "sc" "fd" "fd")))))))
